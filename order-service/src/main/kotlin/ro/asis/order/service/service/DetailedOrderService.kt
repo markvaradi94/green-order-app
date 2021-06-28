@@ -26,9 +26,9 @@ class DetailedOrderService(
             .orElseThrow { ResourceNotFoundException("Could not find provider with id ${order.providerId}") }
         return repository.save(
             DetailedOrderEntity(
-                orderId = order.id!!,
-                clientId = client.id!!,
-                providerId = provider.id!!,
+                orderId = order.id,
+                clientId = client.id,
+                providerId = provider.id,
                 clientName = "${client.firstName} ${client.lastName}",
                 providerName = provider.name
             )
@@ -47,7 +47,7 @@ class DetailedOrderService(
         repository.findByProviderId(providerId)
             .orElseThrow { ResourceNotFoundException("Could not find detailed order for provider with id $providerId") }
 
-    fun findDetailedOrderByOrder(order: OrderEntity): DetailedOrderEntity = findDetailedOrderByOrderId(order.id!!)
+    fun findDetailedOrderByOrder(order: OrderEntity): DetailedOrderEntity = findDetailedOrderByOrderId(order.id)
 
     fun findOrderForDetailedOrder(detailedOrder: DetailedOrderEntity): Order =
         orderApiClient.getOrder(detailedOrder.orderId)

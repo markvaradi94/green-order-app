@@ -9,12 +9,11 @@ import ro.asis.commons.model.GreenBag
 @Document(collection = "orders")
 class OrderEntity(
     @Id
-    var id: String? = ObjectId.get().toHexString(),
+    var id: String = ObjectId.get().toHexString(),
 
     var clientId: String,
     var providerId: String,
     var status: OrderStatus,
     var bags: List<GreenBag> = listOf(),
     var totalPrice: Double
-    //TODO -- add totalPrice to Cart and transmit to Order at checkout
 )
