@@ -16,4 +16,6 @@ class OrderEntity(
     var status: OrderStatus,
     var bags: List<GreenBag> = listOf(),
     var totalPrice: Double
+    //TODO -- add totalPrice to Cart and transmit to Order at checkout
+    //TODO add logic to calculate totalPrice from bags
 )

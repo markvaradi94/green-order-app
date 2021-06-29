@@ -10,14 +10,17 @@ import ro.asis.order.service.model.entity.DetailedOrderEntity
 import ro.asis.order.service.model.entity.OrderEntity
 import ro.asis.order.service.repository.OrderDao
 import ro.asis.order.service.repository.OrderRepository
+import ro.asis.order.service.service.validator.OrderValidator
 import java.util.*
 
 @Service
 class OrderService(
     private val dao: OrderDao,
     private val mapper: ObjectMapper,
+    private val validator: OrderValidator,
     private val repository: OrderRepository,
-    private val detailedOrderService: DetailedOrderService
+    private val detailedOrderService: DetailedOrderService,
+    private val notificationsService: OrderNotificationsService
 ) {
     companion object {
         private val LOG = LoggerFactory.getLogger(OrderEntity::class.java)
@@ -32,19 +35,31 @@ class OrderService(
         return detailedOrderService.findDetailedOrderByOrder(order)
     }
 
-    fun addOrder(order: OrderEntity): OrderEntity = repository.save(order)
+    fun addOrder(order: OrderEntity): OrderEntity {
+        validator.validateNewOrThrow(order)
+        val dbOrder = repository.save(order)
+        notificationsService.notifyOrderCreated(dbOrder)
+        return dbOrder
+    }
 
     fun deleteOrder(orderId: String): Optional<OrderEntity> {
+        validator.validateExistsOrThrow(orderId)
         val orderToDelete = repository.findById(orderId)
         orderToDelete.ifPresent { deleteExistingOrder(it) }
         return orderToDelete
     }
 
     fun patchOrder(orderId: String, patch: JsonPatch): OrderEntity {
+        validator.validateExistsOrThrow(orderId)
+
         val dbOrder = getOrThrow(orderId)
         val patchedOrderJson = patch.apply(mapper.valueToTree(dbOrder))
         val patchedOrder = mapper.treeToValue(patchedOrderJson, OrderEntity::class.java)
+
+        validator.validateReplaceOrThrow(orderId, patchedOrder)
         copyOrder(patchedOrder, dbOrder)
+        notificationsService.notifyOrderEdited(dbOrder)
+
         return repository.save(dbOrder)
     }
 
@@ -57,6 +72,7 @@ class OrderService(
 
     private fun deleteExistingOrder(order: OrderEntity) {
         LOG.info("Deleting order: $order")
+        notificationsService.notifyOrderDeleted(order)
         repository.delete(order)
     }
 

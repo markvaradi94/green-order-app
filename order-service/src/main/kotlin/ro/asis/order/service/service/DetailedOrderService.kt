@@ -35,6 +35,38 @@ class DetailedOrderService(
         )
     }
 
+    fun createDetailedOrderForNewOrder(orderId: String, clientId: String, providerId: String): DetailedOrderEntity {
+        val order = orderApiClient.getOrder(orderId)
+            .orElseThrow { ResourceNotFoundException("Could not find order with id $orderId") }
+        val client = clientApiClient.getClient(clientId)
+            .orElseThrow { ResourceNotFoundException("Could not find client with id $clientId") }
+        val provider = providerApiClient.getProvider(providerId)
+            .orElseThrow { ResourceNotFoundException("Could not find provider with id $providerId") }
+
+        val newDetailedOrder = DetailedOrderEntity(
+            orderId = order.id,
+            providerId = provider.id,
+            clientId = client.id,
+            clientName = "${client.firstName} ${client.lastName}",
+            providerName = provider.name
+        )
+
+        return repository.save(newDetailedOrder)
+    }
+
+    fun editForOrderChange(orderId: String, editedOrder: Order): DetailedOrderEntity {
+        val detailedOrder = findDetailedOrderByOrderId(orderId)
+        editedOrder.status
+        //TODO think about status changes and other relevant information when modifying an order(add status to details?)
+        return detailedOrder
+    }
+
+    fun deleteForOrder(orderId: String): DetailedOrderEntity {
+        val detailedOrderToDelete = findDetailedOrderByOrderId(orderId)
+        repository.delete(detailedOrderToDelete)
+        return detailedOrderToDelete
+    }
+
     fun findDetailedOrderByOrderId(orderId: String): DetailedOrderEntity =
         repository.findByOrderId(orderId)
             .orElseThrow { ResourceNotFoundException("Could not find detailed order for order with id $orderId") }
